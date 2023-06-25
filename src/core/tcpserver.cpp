@@ -17,12 +17,12 @@ TcpServer::TcpServer(std::shared_ptr<Clients> &clients) : m_clients(clients)
 
 void TcpServer::process(int numFds)
 {
-    /* for (int i = 0; (numFds > 0) && (i < m_clients->getMaxClients()); ++i) {
+    for (int i = 0; (numFds > 0) && (i < m_clients->getMaxClients()); ++i) {
         if (m_clients->getPollClients()[i].revents & POLLIN) {
-            std::thread workThread(&)
+            m_requestHandler.handleRequest(i);
             numFds--;
         }
-    } */
+    }
 }
 
 void TcpServer::doAccept(struct sockaddr_in *addr)

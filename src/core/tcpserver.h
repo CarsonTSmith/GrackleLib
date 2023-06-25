@@ -2,6 +2,7 @@
 #define _TCPSERVER_H_
 
 #include "clients.h"
+#include "requesthandler.h"
 
 #include <memory>
 #include <netinet/in.h>
@@ -14,6 +15,7 @@ private:
     int m_port = 42125;
     int m_sockfd;
     std::shared_ptr<Clients> m_clients;
+    RequestHandler m_requestHandler;
 
     int  doStart(struct sockaddr_in *addr);
     void doAccept(struct sockaddr_in *addr);

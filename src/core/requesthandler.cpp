@@ -1,6 +1,7 @@
 #include "requesthandler.h"
 
 #include <cstdlib>
+#include <unistd.h>
 
 using namespace grackle;
 
@@ -16,117 +17,121 @@ unsigned int RequestHandler::headerToInt(const char *header)
 
 int RequestHandler::readHeader(const int index)
 {
-    auto &clients = clients::clients_s::get_instance();
-    const int bytesrd = read(clients.p_clients[index].fd,
-                             clients.c_clients[index].header + clients.c_clients[index].header_bytes_rd,
-                             client::HEADER_SIZE - clients.c_clients[index].header_bytes_rd);
+    const int bytesrd = read(m_clients->getPollClients()[index].fd,
+                             m_clients->getClients()[index].m_header + m_clients->getClients()[index].m_headerBytesRd,
+                             m_clients->getClients()[index].m_HEADERSIZE - m_clients->getClients()[index].m_headerBytesRd);
     if (bytesrd < 0) {
         if ((errno == EAGAIN) || (errno == EINTR)) {
-            return HEADER_NOT_DONE;
+            return m_HEADERNOTDONE;
         }
 
-        return HEADER_READ_ERROR;
+        return m_HEADERREADERROR;
+    } else if (bytesrd == 0) {
+        return m_CLIENTCLOSEDCONN;
     }
 
-    if (bytesrd == 0) {
-        return CLIENT_CLOSED_CONN;
-    }
-
-    clients.c_clients[index].header_bytes_rd += bytesrd;
-    if (clients.c_clients[index].header_bytes_rd == client::HEADER_SIZE) {
-        clients.c_clients[index].header_done = true;
-        clients.c_clients[index].body_length = convert_header_to_num(clients.c_clients[index].header);
-        if (clients.c_clients[index].body_length > client::BODY_SIZE) {
-            return HEADER_READ_ERROR; // stop the buffer from overflowing
+    m_clients->getClients()[index].m_headerBytesRd += bytesrd;
+    if (m_clients->getClients()[index].m_headerBytesRd == m_clients->getClients()[index].m_HEADERSIZE) {
+        m_clients->getClients()[index].m_headerDone = true;
+        m_clients->getClients()[index].m_bodyLength = headerToInt(m_clients->getClients()[index].m_header);
+        if (m_clients->getClients()[index].m_bodyLength > m_clients->getClients()[index].m_BODYSIZE) {
+            return m_HEADERREADERROR; // Stop the body buffer from overflowing
         }
 
-        return HEADER_DONE;
+        return m_HEADERDONE;
     }
 
-    return HEADER_NOT_DONE;
+    return m_HEADERNOTDONE;
 }
 
-static int read_body(const int index)
+int RequestHandler::readBody(const int index)
 {
-    auto &clients = clients::clients_s::get_instance();
-    const auto bytesrd = read(clients.p_clients[index].fd,
-                              clients.c_clients[index].body + clients.c_clients[index].body_bytes_rd,
-                              clients.c_clients[index].body_length - clients.c_clients[index].body_bytes_rd);
+    const auto bytesrd = read(m_clients->getPollClients()[index].fd,
+                              m_clients->getClients()[index].m_body + m_clients->getClients()[index].m_bodyBytesRd,
+                              m_clients->getClients()[index].m_bodyLength - m_clients->getClients()[index].m_bodyBytesRd);
     if (bytesrd < 0) {
         if ((errno == EAGAIN) || (errno == EINTR)) {
-            return BODY_NOT_DONE; 
+            return m_BODYNOTDONE; 
         }
 
-        return BODY_READ_ERROR;
+        return m_BODYREADERROR;
     }
 
     if (bytesrd == 0) {
-        return CLIENT_CLOSED_CONN;
+        return m_CLIENTCLOSEDCONN;
     }
 
-    clients.c_clients[index].body_bytes_rd += bytesrd;
-    if (clients.c_clients[index].body_bytes_rd < clients.c_clients[index].body_length) {
-        return BODY_NOT_DONE;
+    m_clients->getClients()[index].m_bodyBytesRd += bytesrd;
+    if (m_clients->getClients()[index].m_bodyBytesRd < m_clients->getClients()[index].m_bodyLength) {
+        return m_BODYNOTDONE;
     }
     
-    return BODY_DONE;
+    return m_BODYDONE;
 }
 
-static void do_read_body(const int index)
+void RequestHandler::doReadBody(const int index)
 {
-    auto &clients = clients::clients_s::get_instance();
-    int status = read_body(index);
+    auto status = readBody(index);
     switch (status) {
-    case BODY_DONE:
+    case m_BODYDONE:
         // perform the request
         // then reset the client's buffers
-        request_router::route(index);
-        clients.c_clients[index].reset();
+        route(index);
+        m_clients->getClients()[index].reset();
         break;
-    case BODY_NOT_DONE:
+    case m_BODYNOTDONE:
         break; // go back to polling
-    case BODY_READ_ERROR:
-    case CLIENT_CLOSED_CONN:
+    case m_BODYREADERROR:
+    case m_CLIENTCLOSEDCONN:
     default:
-        clients::reset(index);
+        m_clients->reset(index);
         break;
     }
 }
 
-static void do_read_header(const int index)
+void RequestHandler::doReadHeader(const int index)
 {
-    int status = read_header(index);
+    auto status = readHeader(index);
     switch (status) {
-    case HEADER_DONE:
-        do_read_body(index);
+    case m_HEADERDONE:
+        doReadBody(index);
         break;
-    case HEADER_NOT_DONE:
+    case m_HEADERNOTDONE:
         break; // go back to polling
-    case HEADER_READ_ERROR:
-    case CLIENT_CLOSED_CONN:
+    case m_HEADERREADERROR:
+    case m_CLIENTCLOSEDCONN:
     default:
-        clients::reset(index);
+        m_clients->reset(index);
         break;
     }
 }
 
-void request::handle_request(int id, const int index)
+void RequestHandler::route(const int index)
 {
-    auto &clients = clients::clients_s::get_instance();
-    if (!clients.c_clients[index].read_mutex.try_lock()) {
+    auto it = m_router.find(m_clients->getClients()[index].getPath());
+    if (it == m_router.end()) {
         return;
-    }
-
-    if (clients.p_clients[index].fd == -1) {
-        clients.c_clients[index].read_mutex.unlock();
-        return;
-    }
-
-    if (clients.c_clients[index].header_done == true) {
-        do_read_body(index);
     } else {
-        do_read_header(index);
+        it->second();
+    }
+}
+
+void RequestHandler::handleRequest(const int index)
+{
+    if (!m_clients->getClients()[index].m_readMutex.try_lock()) {
+        return;
     }
 
-    clients.c_clients[index].read_mutex.unlock();
+    if (m_clients->getPollClients()[index].fd == -1) {
+        m_clients->getClients()[index].m_readMutex.unlock();
+        return;
+    }
+
+    if (m_clients->getClients()[index].m_headerDone == true) {
+        doReadBody(index);
+    } else {
+        doReadHeader(index);
+    }
+
+    m_clients->getClients()[index].m_readMutex.unlock();
 }

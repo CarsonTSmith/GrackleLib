@@ -73,3 +73,8 @@ std::vector<pollfd> &Clients::getPollClients()
 {
     return m_pollClients;
 }
+
+std::vector<Client> &Clients::getClients()
+{
+    return m_clients;
+}
