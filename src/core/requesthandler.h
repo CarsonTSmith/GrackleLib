@@ -2,6 +2,7 @@
 #define _REQUEST_HANDLER_H_
 
 #include "clients.h"
+#include "router.h"
 
 #include <functional>
 #include <memory>
@@ -24,17 +25,18 @@ private:
     static constexpr int m_CLIENTCLOSEDCONN = 1;
 
     std::shared_ptr<Clients> m_clients;
-    std::unordered_map<std::string, std::function<void()>> m_router; // TODO: maybe move this to a seperate class
+    Router m_router; // TODO: maybe move this to a seperate class
 
     void doReadHeader(const int index);
     void doReadBody(const int index);
     int readBody(const int index);
     int readHeader(const int index);
     unsigned int headerToInt(const char *header);
-    void route(const int index); // TODO: maybe move this to a seperate class
 
 public:
+    RequestHandler(std::shared_ptr<Clients> &clients);
     void handleRequest(const int index);
+    Router &getRouter();
 
 }; /* class RequestHandler */
 

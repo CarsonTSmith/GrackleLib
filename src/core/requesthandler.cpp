@@ -5,6 +5,11 @@
 
 using namespace grackle;
 
+RequestHandler::RequestHandler(std::shared_ptr<Clients> &clients) : m_clients(clients)
+{
+
+}
+
 unsigned int RequestHandler::headerToInt(const char *header)
 {
 	auto ret = std::atoi(header);
@@ -76,7 +81,7 @@ void RequestHandler::doReadBody(const int index)
     case m_BODYDONE:
         // perform the request
         // then reset the client's buffers
-        route(index);
+        m_router.route(index);
         m_clients->getClients()[index].reset();
         break;
     case m_BODYNOTDONE:
@@ -106,16 +111,6 @@ void RequestHandler::doReadHeader(const int index)
     }
 }
 
-void RequestHandler::route(const int index)
-{
-    auto it = m_router.find(m_clients->getClients()[index].getPath());
-    if (it == m_router.end()) {
-        return;
-    } else {
-        it->second();
-    }
-}
-
 void RequestHandler::handleRequest(const int index)
 {
     if (!m_clients->getClients()[index].m_readMutex.try_lock()) {
@@ -134,4 +129,9 @@ void RequestHandler::handleRequest(const int index)
     }
 
     m_clients->getClients()[index].m_readMutex.unlock();
+}
+
+Router &RequestHandler::getRouter()
+{
+    return m_router;
 }

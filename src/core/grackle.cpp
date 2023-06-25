@@ -1,14 +1,14 @@
 #include "grackle.h"
 
-#include "clients.h"
-#include "requesthandler.h"
+#include "clients.h" // Clients
+#include "requesthandler.h" // RequestHandler
 
 #include <fcntl.h> // fcntl
 #include <iostream> // cerr
 #include <memory> // shared_ptr
 #include <netinet/in.h> // struct sockaddr_in
 #include <thread> // thread
-#include <unistd.h>
+#include <unistd.h> // close
 
 using namespace grackle;
 
@@ -25,12 +25,12 @@ class GrackleServer::GrackleServerImpl {
 *
 *******************************************************************************/
 private:
-    int                          m_port = 42125;
-    int                          m_sockfd;
-    Clients                      m_clients;
-    RequestHandler               m_requestHandler;
-    std::unique_ptr<std::thread> m_acceptThread;
-    std::unique_ptr<std::thread> m_pollThread;
+    int                             m_port = 42125;
+    int                             m_sockfd;
+    std::shared_ptr<Clients>        m_clients;
+    std::unique_ptr<RequestHandler> m_requestHandler;
+    /* std::unique_ptr<std::thread> m_acceptThread;
+    std::unique_ptr<std::thread> m_pollThread; */
     // Threadpool    m_pool;
 
 
@@ -95,7 +95,7 @@ void doAccept(struct sockaddr_in *addr)
         flags = fcntl(clientfd, F_GETFL, 0);
         fcntl(clientfd, F_SETFL, flags | O_NONBLOCK);
 
-        auto index = m_clients.add(clientfd);
+        auto index = m_clients->add(clientfd);
         if (index < 0) {
             close(clientfd);
         }
@@ -111,8 +111,8 @@ void doPoll()
     int numFds;
 
     while (1) {
-		numFds = poll(m_clients.getPollClients().data(),
-                      m_clients.getMaxClients(),
+		numFds = poll(m_clients->getPollClients().data(),
+                      m_clients->getMaxClients(),
                        50); // timeout so when new clients connect they are polled
         if (numFds == 0) {
             continue;
@@ -126,14 +126,14 @@ void doPoll()
 }
 
 /*******************************************************************************
-*
+* Grabs all the Sockets/Clients that had an event occur and processes them
 *
 *******************************************************************************/
 void process(int numFds)
 {
-    for (int i = 0; (numFds > 0) && (i < m_clients.getMaxClients()); ++i) {
-        if (m_clients.getPollClients()[i].revents & POLLIN) {
-            m_requestHandler.handleRequest(i);
+    for (int i = 0; (numFds > 0) && (i < m_clients->getMaxClients()); ++i) {
+        if (m_clients->getPollClients()[i].revents & POLLIN) {
+            m_requestHandler->handleRequest(i);
             numFds--;
         }
     }
@@ -146,11 +146,23 @@ void process(int numFds)
 *
 *******************************************************************************/
 public:
-    GrackleServerImpl()  = default;
+
+
+
+/*******************************************************************************
+* Constructor
+*
+*******************************************************************************/
+GrackleServerImpl() : m_clients(new Clients),
+                      m_requestHandler(new RequestHandler(m_clients))
+{
+
+}
+
     ~GrackleServerImpl() = default; // join the accept and poll threads here
 
 /*******************************************************************************
-*
+* Start the server
 *
 *******************************************************************************/
 bool start()
@@ -171,8 +183,6 @@ bool start()
 
     std::thread pollThread(&doPoll, this);
     pollThread.detach(); */
-
-    return 0;
 
     return true;
 }
@@ -202,16 +212,16 @@ void setMaxClients(const int maxClients)
         return;
     }
 
-    m_clients.setMaxClients(maxClients);
+    m_clients->setMaxClients(maxClients);
 }
 
 /*******************************************************************************
 * Add an endpoint to the server
 *
 *******************************************************************************/
-bool addEndpoint(const std::string &path, const std::function<void()> &callback)
+bool addEndpoint(const std::string &path, const std::function<void(std::string &)> &callback)
 {
-    // return m_requestHandler.getRouter().addEndpoint(path, callback);
+    return m_requestHandler->getRouter().addRoute(path, callback);
     return true;
 }
 
@@ -288,7 +298,7 @@ void GrackleServer::setMaxClients(const int maxClients)
 *
 *******************************************************************************/
 bool GrackleServer::addEndpoint(const std::string &path,
-                                const std::function<void()> &callback)
+                                const std::function<void(std::string &)> &callback)
 {
     return m_impl->addEndpoint(path, callback);
 }

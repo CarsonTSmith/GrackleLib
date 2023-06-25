@@ -30,7 +30,8 @@ public:
     void setMaxClients(const int maxClients);
 
     // Adds an endpoint and a callback to the Server.
-    bool addEndpoint(const std::string &path, const std::function<void()> &callback);
+    bool addEndpoint(const std::string &path,
+                     const std::function<void(std::string &)> &callback);
 
 }; /* class GrackleServer */
 
