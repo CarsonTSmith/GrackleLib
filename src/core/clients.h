@@ -24,6 +24,8 @@ public:
     int  add(const int clientfd);
     void reset(const int index);
     void setMaxClients(const int maxClients);
+    int  getMaxClients();
+    std::vector<pollfd> &getPollClients();
 }; /* class Clients */
 
 } /* namespace grackle */

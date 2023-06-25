@@ -64,20 +64,20 @@ void TcpServer::doAccept(struct sockaddr_in *addr)
 
 void TcpServer::doPoll()
 {
-    /* int num_fds; */
+    int numFds;
 
     while (1) {
-		/* num_fds = poll(clients.p_clients,
-                       clients::MAX_CLIENTS,
+		numFds = poll(m_clients->getPollClients().data(),
+                       m_clients->getMaxClients(),
                        50); // timeout so when new clients connect they are polled
-		if (num_fds > 0) {
-			process(clients, num_fds);
-		} else if (num_fds < 0) { // poll error
-			fprintf(stderr, "rd_from_clients() poll error\n%d", errno);
-			exit(errno);
-		} else if (num_fds == 0) { // no data sent yet, poll again
+        if (numFds == 0) {
+            continue;
+        } else if (numFds > 0) {
+			process(numFds);
+		} else if (numFds < 0) { // poll error
+			std::cerr << "Poll error with errno " << errno << std::endl;
 			continue;
-		} */
+		}
 	}
 }
 

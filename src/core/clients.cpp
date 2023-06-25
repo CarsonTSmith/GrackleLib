@@ -63,3 +63,13 @@ void Clients::reset(const int index)
     m_clients[index].reset();
     m_numClients--;
 }
+
+int Clients::getMaxClients()
+{
+    return m_maxClients;
+}
+
+std::vector<pollfd> &Clients::getPollClients()
+{
+    return m_pollClients;
+}
