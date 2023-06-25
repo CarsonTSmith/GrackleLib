@@ -16,11 +16,10 @@ using namespace grackle;
 class GrackleServer::GrackleServerImpl {
 
 private:
+    std::shared_ptr<Clients> m_clients;
     // RequestRouter m_router;
     // Threadpool    m_pool;
-    TcpServer     m_tcpServer;
-    std::shared_ptr<Clients> m_clients;
-    
+    TcpServer                m_tcpServer;
     
 public:
     GrackleServerImpl() : m_clients(new Clients), m_tcpServer(m_clients)
@@ -46,7 +45,17 @@ public:
             return;
         }
 
-        //m_tcpServer.setPort(port);
+        m_tcpServer.setPort(port);
+    }
+
+    void setMaxClients(const int maxClients)
+    {
+        if (maxClients < 1) {
+            std::cerr << "Max clients can not be less than 1" << std::endl;
+            return;
+        }
+
+        m_clients->setMaxClients(maxClients);
     }
 
     bool addEndpoint(const std::string &path, const std::function<void()> &callback)
@@ -83,12 +92,21 @@ bool GrackleServer::start()
 }
 
 /*******************************************************************************
-* Set the port that the server will bind to.
+* Sets the port that the server will bind to.
 *
 *******************************************************************************/
 void GrackleServer::setPort(const int port)
 {
     m_impl->setPort(port);
+}
+
+/*******************************************************************************
+* Sets the maximum number of TCP clients that can be connected at once.
+*
+*******************************************************************************/
+void GrackleServer::setMaxClients(const int maxClients)
+{
+    m_impl->setMaxClients(maxClients);
 }
 
 /*******************************************************************************

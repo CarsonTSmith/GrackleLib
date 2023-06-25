@@ -14,19 +14,22 @@ private:
     std::unique_ptr<GrackleServerImpl> m_impl;
 
 public:
-    // Constructor
+    // Constructor.
     GrackleServer();
 
-    // Destructor
+    // Destructor.
     ~GrackleServer();
 
-    // Starts the server
+    // Starts the server.
     bool start();
 
-    // Sets the port number that the tcp socket will bind to
+    // Sets the port number that the Tcp socket will bind to.
     void setPort(const int port);
 
-    // Adds an endpoint and a callback to the RequestRouter
+    // Sets the maximum number of Tcp clients that can be connected at once.
+    void setMaxClients(const int maxClients);
+
+    // Adds an endpoint and a callback to the Server.
     bool addEndpoint(const std::string &path, const std::function<void()> &callback);
 
 }; /* class GrackleServer */
