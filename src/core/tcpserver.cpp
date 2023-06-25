@@ -17,25 +17,10 @@ TcpServer::TcpServer(std::shared_ptr<Clients> &clients) : m_clients(clients)
 
 void TcpServer::process(int numFds)
 {
-    /* for (int i = 0; (num_fds > 0) && (i < clients::MAX_CLIENTS); ++i) {
-        if (clients.p_clients[i].revents & POLLIN) {
-            while (1) {
-                if (threadpool::g_threadpool.get_q_size() > threadpool::MAX_QUEUE_SIZE) {
-                    {
-                        std::unique_lock lk(threadpool::mutex);
-                        bool status = threadpool::cv.wait_for(lk, std::chrono::milliseconds(5),
-                                                []{return (threadpool::tasks_in_queue < threadpool::MAX_QUEUE_SIZE);});
-                        if (status) {
-                            break;
-                        }
-                    }
-                } else {
-                    break;
-                }
-            }
-
-            threadpool::g_threadpool.push(request::handle_request, i);
-            num_fds--;
+    /* for (int i = 0; (numFds > 0) && (i < m_clients->getMaxClients()); ++i) {
+        if (m_clients->getPollClients()[i].revents & POLLIN) {
+            std::thread workThread(&)
+            numFds--;
         }
     } */
 }
