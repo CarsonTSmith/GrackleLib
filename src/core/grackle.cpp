@@ -3,6 +3,7 @@
 #include "clients.h" // Clients
 #include "requesthandler.h" // RequestHandler
 
+#include <atomic>
 #include <fcntl.h> // fcntl
 #include <iostream> // cerr
 #include <memory> // shared_ptr
@@ -27,10 +28,13 @@ class GrackleServer::GrackleServerImpl {
 private:
     int                             m_port = 42125;
     int                             m_sockfd;
+    struct sockaddr_in              m_addr;
     std::shared_ptr<Clients>        m_clients;
     std::unique_ptr<RequestHandler> m_requestHandler;
-    /* std::unique_ptr<std::thread> m_acceptThread;
-    std::unique_ptr<std::thread> m_pollThread; */
+    std::thread                     m_acceptThread;
+    std::thread                     m_pollThread;
+    std::atomic<bool>               m_cancelThreads;
+
     // Threadpool    m_pool;
 
 
@@ -45,7 +49,7 @@ private:
 * Initializes the Tcp Socket
 *
 *******************************************************************************/
-int doStart(struct sockaddr_in *addr)
+int doStart()
 {
     m_sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (m_sockfd < 0) {
@@ -53,17 +57,20 @@ int doStart(struct sockaddr_in *addr)
         return errno;
     }
 
+    auto flags = fcntl(m_sockfd, F_GETFL, 0);
+    fcntl(m_sockfd, F_SETFL, flags | O_NONBLOCK);
+
     int opt = 1;
     if (setsockopt(m_sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
         std::cerr << "Tcp setsockopt failed with errno " << errno << std::endl;
         return errno;
     }
 
-    addr->sin_family = AF_INET;
-    addr->sin_addr.s_addr = INADDR_ANY;
-    addr->sin_port = htons(m_port);
+    m_addr.sin_family = AF_INET;
+    m_addr.sin_addr.s_addr = INADDR_ANY;
+    m_addr.sin_port = htons(m_port);
 
-    if (bind(m_sockfd, (struct sockaddr *)addr, sizeof(*addr)) < 0) {
+    if (bind(m_sockfd, (struct sockaddr *)&m_addr, sizeof(m_addr)) < 0) {
         std::cerr << "Tcp bind failed with errno " << errno << std::endl;
         return errno;
     }
@@ -80,14 +87,22 @@ int doStart(struct sockaddr_in *addr)
 * Infinite event loop that accepts incoming Tcp connections
 *
 *******************************************************************************/
-void doAccept(struct sockaddr_in *addr)
+void doAccept(std::atomic<bool> &cancel)
 {
-    socklen_t addrsz = sizeof(*addr);
+    socklen_t addrsz = sizeof(m_addr);
     int clientfd, flags;
 
     while (1) {
-        clientfd = accept(m_sockfd, (struct sockaddr *)addr, &addrsz);
+        if (cancel) {
+            return;
+        }
+
+        clientfd = accept(m_sockfd, (struct sockaddr *)&m_addr, &addrsz);
         if (clientfd < 0) {
+            if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+                continue;
+            }
+
             std::cerr << "Tcp accept failed" << std::endl;
             continue;
         }
@@ -106,7 +121,7 @@ void doAccept(struct sockaddr_in *addr)
 *
 *
 *******************************************************************************/
-void doPoll()
+void doPoll(std::atomic<bool> &cancel)
 {
     int numFds;
 
@@ -114,7 +129,9 @@ void doPoll()
 		numFds = poll(m_clients->getPollClients().data(),
                       m_clients->getMaxClients(),
                        50); // timeout so when new clients connect they are polled
-        if (numFds == 0) {
+        if (cancel) {
+            return;
+        } else if (numFds == 0) {
             continue;
         } else if (numFds > 0) {
 			process(numFds);
@@ -159,7 +176,13 @@ GrackleServerImpl() : m_clients(new Clients),
 
 }
 
-    ~GrackleServerImpl() = default; // join the accept and poll threads here
+
+~GrackleServerImpl()
+{
+    m_cancelThreads = true;
+    m_acceptThread.join();
+    m_pollThread.join();
+} // join the accept and poll threads here
 
 /*******************************************************************************
 * Start the server
@@ -167,8 +190,7 @@ GrackleServerImpl() : m_clients(new Clients),
 *******************************************************************************/
 bool start()
 {
-    struct sockaddr_in addr;
-    auto status = doStart(&addr);
+    auto status = doStart();
     if (status != 0) {
         std::cerr << "Tcp Server failed to start" << std::endl;
         return false;
@@ -176,13 +198,8 @@ bool start()
 
     // These two threads will be in infinite loops either accepting incoming
     // Tcp connections or polling clients
-    // TODO: These will need to be killed when the GrackleServer object destructs
-
-    /* std::thread acceptThread(&doAccept, this, &addr);
-    acceptThread.detach();
-
-    std::thread pollThread(&doPoll, this);
-    pollThread.detach(); */
+    m_acceptThread = std::thread(&GrackleServerImpl::doAccept, this, std::ref(m_cancelThreads));
+    m_pollThread   = std::thread(&GrackleServerImpl::doPoll, this, std::ref(m_cancelThreads));
 
     return true;
 }
