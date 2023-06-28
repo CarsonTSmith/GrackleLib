@@ -8,6 +8,7 @@
 namespace grackle {
 
 class Clients;
+class Responder;
 class Router;
 
 class RequestHandler {
@@ -24,14 +25,16 @@ private:
 
     static constexpr int m_CLIENTCLOSEDCONN = 1;
 
-    std::shared_ptr<Clients> m_clients;
-    std::unique_ptr<Router>  m_router;
+    std::shared_ptr<Clients>   m_clients;
+    std::unique_ptr<Responder> m_responder;
+    std::unique_ptr<Router>    m_router;
 
     void doReadHeader(const int index);
     void doReadBody(const int index);
     int readBody(const int index);
     int readHeader(const int index);
     unsigned int headerToInt(const char *header);
+    void doRoute(const int index);
 
 public:
     RequestHandler(std::shared_ptr<Clients> &clients);

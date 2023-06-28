@@ -31,7 +31,7 @@ public:
 
     // Adds an endpoint and a callback to the Server.
     bool addEndpoint(const std::string &path,
-                     const std::function<void(std::string &)> &callback);
+                     const std::function<std::string(std::string &)> &callback);
 
 }; /* class GrackleServer */
 

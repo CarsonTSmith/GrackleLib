@@ -2,6 +2,7 @@
 
 #include "client.h" // Client
 #include "clients.h" // Clients
+#include "responder.h" // Responder
 #include "requesthandler.h" // RequestHandler
 #include "router.h" // Router
 
@@ -238,7 +239,7 @@ void setMaxClients(const int maxClients)
 * Add an endpoint to the server
 *
 *******************************************************************************/
-bool addEndpoint(const std::string &path, const std::function<void(std::string &)> &callback)
+bool addEndpoint(const std::string &path, const std::function<std::string(std::string &)> &callback)
 {
     return m_requestHandler->getRouter()->addRoute(path, callback);
     return true;
@@ -317,7 +318,7 @@ void GrackleServer::setMaxClients(const int maxClients)
 *
 *******************************************************************************/
 bool GrackleServer::addEndpoint(const std::string &path,
-                                const std::function<void(std::string &)> &callback)
+                                const std::function<std::string(std::string &)> &callback)
 {
     return m_impl->addEndpoint(path, callback);
 }

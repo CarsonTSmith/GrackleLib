@@ -2,6 +2,7 @@
 
 #include "client.h"
 #include "clients.h"
+#include "responder.h"
 #include "router.h"
 
 #include <cstdlib>
@@ -9,7 +10,9 @@
 
 using namespace grackle;
 
-RequestHandler::RequestHandler(std::shared_ptr<Clients> &clients) : m_clients(clients), m_router(new Router)
+RequestHandler::RequestHandler(std::shared_ptr<Clients> &clients) : m_clients(clients), 
+                                                                    m_responder(new Responder(clients)),
+                                                                    m_router(new Router)
 {
 
 }
@@ -83,10 +86,7 @@ void RequestHandler::doReadBody(const int index)
     auto status = readBody(index);
     switch (status) {
     case m_BODYDONE:
-        // perform the request
-        // then reset the client's buffers
-        m_router->route(index);
-        m_clients->getClients()[index].reset();
+        doRoute(index);
         break;
     case m_BODYNOTDONE:
         break; // go back to polling
@@ -104,6 +104,7 @@ void RequestHandler::doReadHeader(const int index)
     switch (status) {
     case m_HEADERDONE:
         doReadBody(index);
+        m_clients->getClients()[index].reset();
         break;
     case m_HEADERNOTDONE:
         break; // go back to polling
@@ -113,6 +114,16 @@ void RequestHandler::doReadHeader(const int index)
         m_clients->reset(index);
         break;
     }
+}
+
+void RequestHandler::doRoute(const int index)
+{
+    auto result = m_router->route(index);
+    if (result.first) {
+        m_responder->sendToOne(index, result.second);
+    }
+
+    m_clients->getClients()[index].reset();
 }
 
 void RequestHandler::handleRequest(const int index)

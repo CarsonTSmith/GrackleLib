@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <utility>
 
 namespace grackle {
 
@@ -13,13 +14,13 @@ class Clients;
 class Router {
 
 private:
-    std::unordered_map<std::string, std::function<void(std::string &)>> m_routeTable;
+    std::unordered_map<std::string, std::function<std::string(std::string &)>> m_routeTable;
     std::shared_ptr<Clients> m_clients;
 
 public:
     bool addRoute(const std::string &path,
-                  const std::function<void(std::string &)> &callback);
-    void route(const int index);
+                  const std::function<std::string(std::string &)> &callback);
+    std::pair<bool, std::string> route(const int index);
 
 }; /* class Router */
 
