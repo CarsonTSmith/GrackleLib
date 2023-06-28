@@ -1,9 +1,11 @@
 #include "grackle.h"
 
+#include "client.h" // Client
 #include "clients.h" // Clients
 #include "requesthandler.h" // RequestHandler
+#include "router.h" // Router
 
-#include <atomic>
+#include <atomic> // atomic
 #include <fcntl.h> // fcntl
 #include <iostream> // cerr
 #include <memory> // shared_ptr
@@ -238,7 +240,7 @@ void setMaxClients(const int maxClients)
 *******************************************************************************/
 bool addEndpoint(const std::string &path, const std::function<void(std::string &)> &callback)
 {
-    return m_requestHandler->getRouter().addRoute(path, callback);
+    return m_requestHandler->getRouter()->addRoute(path, callback);
     return true;
 }
 

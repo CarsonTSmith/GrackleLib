@@ -1,5 +1,8 @@
 #include "router.h"
 
+#include "client.h"
+#include "clients.h"
+
 #include <iostream> // cerr
 
 using namespace grackle;

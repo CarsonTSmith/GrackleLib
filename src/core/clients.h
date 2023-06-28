@@ -1,13 +1,13 @@
 #ifndef _CLIENTS_H_
 #define _CLIENTS_H_
 
-#include "client.h"
-
 #include <atomic>
 #include <poll.h>
 #include <vector>
 
 namespace grackle {
+
+class Client;
 
 class Clients {
 

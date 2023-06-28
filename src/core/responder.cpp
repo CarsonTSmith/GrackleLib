@@ -1,6 +1,10 @@
 #include "responder.h"
 
+#include "client.h"
+#include "clients.h"
+
 #include <iostream> // cerr
+#include <mutex> // lock_guard
 #include <sys/socket.h> // send
 
 using namespace grackle;

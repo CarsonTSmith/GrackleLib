@@ -1,11 +1,11 @@
 #ifndef _RESPONDER_H_
 #define _RESPONDER_H_
 
-#include "clients.h"
-
 #include <memory>
 
 namespace grackle {
+
+class Clients;
 
 class Responder {
 

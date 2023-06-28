@@ -1,14 +1,14 @@
 #ifndef _ROUTER_H_
 #define _ROUTER_H_
 
-#include "clients.h"
-
 #include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
 
 namespace grackle {
+
+class Clients;
 
 class Router {
 

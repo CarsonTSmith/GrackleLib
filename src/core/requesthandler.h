@@ -1,14 +1,14 @@
 #ifndef _REQUEST_HANDLER_H_
 #define _REQUEST_HANDLER_H_
 
-#include "clients.h"
-#include "router.h"
-
 #include <functional>
 #include <memory>
 #include <unordered_map>
 
 namespace grackle {
+
+class Clients;
+class Router;
 
 class RequestHandler {
 
@@ -25,7 +25,7 @@ private:
     static constexpr int m_CLIENTCLOSEDCONN = 1;
 
     std::shared_ptr<Clients> m_clients;
-    Router m_router; // TODO: maybe move this to a seperate class
+    std::unique_ptr<Router>  m_router;
 
     void doReadHeader(const int index);
     void doReadBody(const int index);
@@ -36,7 +36,7 @@ private:
 public:
     RequestHandler(std::shared_ptr<Clients> &clients);
     void handleRequest(const int index);
-    Router &getRouter();
+    std::unique_ptr<Router> &getRouter();
 
 }; /* class RequestHandler */
 

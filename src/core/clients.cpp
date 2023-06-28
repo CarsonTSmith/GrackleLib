@@ -1,5 +1,7 @@
 #include "clients.h"
 
+#include "client.h"
+
 #include <iostream> // cerr
 #include <unistd.h>
 

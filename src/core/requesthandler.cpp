@@ -1,11 +1,15 @@
 #include "requesthandler.h"
 
+#include "client.h"
+#include "clients.h"
+#include "router.h"
+
 #include <cstdlib>
 #include <unistd.h>
 
 using namespace grackle;
 
-RequestHandler::RequestHandler(std::shared_ptr<Clients> &clients) : m_clients(clients)
+RequestHandler::RequestHandler(std::shared_ptr<Clients> &clients) : m_clients(clients), m_router(new Router)
 {
 
 }
@@ -81,7 +85,7 @@ void RequestHandler::doReadBody(const int index)
     case m_BODYDONE:
         // perform the request
         // then reset the client's buffers
-        m_router.route(index);
+        m_router->route(index);
         m_clients->getClients()[index].reset();
         break;
     case m_BODYNOTDONE:
@@ -131,7 +135,7 @@ void RequestHandler::handleRequest(const int index)
     m_clients->getClients()[index].m_readMutex.unlock();
 }
 
-Router &RequestHandler::getRouter()
+std::unique_ptr<Router> &RequestHandler::getRouter()
 {
     return m_router;
 }
