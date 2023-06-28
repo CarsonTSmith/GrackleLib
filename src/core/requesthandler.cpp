@@ -104,7 +104,6 @@ void RequestHandler::doReadHeader(const int index)
     switch (status) {
     case m_HEADERDONE:
         doReadBody(index);
-        m_clients->getClients()[index].reset();
         break;
     case m_HEADERNOTDONE:
         break; // go back to polling
