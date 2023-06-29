@@ -29,7 +29,6 @@ void Client::reset()
     m_bodyLength    = 0;
     m_headerBytesRd = 0;
     m_bodyBytesRd   = 0;
-    m_doc.Clear();
     m_docParsed     = false;
     m_jsonStart     = 0;
 }

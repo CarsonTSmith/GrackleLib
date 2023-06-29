@@ -7,6 +7,11 @@
 
 using namespace grackle;
 
+Router::Router(const std::shared_ptr<Clients> &clients) :m_clients(clients)
+{
+
+}
+
 bool Router::addRoute(const std::string &path,
                       const std::function<std::string(std::string &)> &callback)
 {

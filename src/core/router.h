@@ -18,6 +18,7 @@ private:
     std::shared_ptr<Clients> m_clients;
 
 public:
+    Router(const std::shared_ptr<Clients> &clients);
     bool addRoute(const std::string &path,
                   const std::function<std::string(std::string &)> &callback);
     std::pair<bool, std::string> route(const int index);
