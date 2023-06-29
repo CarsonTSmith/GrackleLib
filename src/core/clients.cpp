@@ -3,7 +3,7 @@
 #include "client.h"
 
 #include <iostream> // cerr
-#include <unistd.h>
+#include <unistd.h> // close
 
 using namespace grackle;
 

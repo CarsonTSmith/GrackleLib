@@ -22,10 +22,6 @@ public:
     unsigned int        m_bodyBytesRd          = 0;
     std::mutex          m_readMutex;
     std::mutex          m_writeMutex;
-    //rapidjson::Document m_doc;
-    //bool                m_docParsed            = false;
-    //unsigned int        m_jsonStart            = 0; // index where the first { in the body is
-    
 
     Client() = default;
     Client(const Client &);

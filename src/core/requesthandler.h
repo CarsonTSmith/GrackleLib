@@ -1,9 +1,8 @@
 #ifndef _REQUEST_HANDLER_H_
 #define _REQUEST_HANDLER_H_
 
-#include <functional>
-#include <memory>
-#include <unordered_map>
+#include <functional> // function
+#include <memory> // shared_ptr
 
 namespace grackle {
 
