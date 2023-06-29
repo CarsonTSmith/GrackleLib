@@ -10,9 +10,10 @@
 
 using namespace grackle;
 
-RequestHandler::RequestHandler(std::shared_ptr<Clients> &clients) : m_clients(clients), 
-                                                                    m_responder(new Responder(clients)),
-                                                                    m_router(new Router(clients))
+RequestHandler::RequestHandler(const std::shared_ptr<Clients> &clients) : 
+    m_clients(clients), 
+    m_responder(new Responder(clients)),
+    m_router(new Router(clients))
 {
 
 }

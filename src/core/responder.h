@@ -13,7 +13,7 @@ private:
     std::shared_ptr<Clients> m_clients;
 
 public:
-    Responder(std::shared_ptr<Clients> &clients);
+    Responder(const std::shared_ptr<Clients> &clients);
     void sendToOne(const int index, const std::string &msg);
     void sendToAll(const std::string &msg);
 

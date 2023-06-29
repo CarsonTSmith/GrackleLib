@@ -37,7 +37,7 @@ private:
     void doRoute(const int index);
 
 public:
-    RequestHandler(std::shared_ptr<Clients> &clients);
+    RequestHandler(const std::shared_ptr<Clients> &clients);
     void handleRequest(const int index);
     std::unique_ptr<Router> &getRouter();
 

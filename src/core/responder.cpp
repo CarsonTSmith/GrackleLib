@@ -9,7 +9,7 @@
 
 using namespace grackle;
 
-Responder::Responder(std::shared_ptr<Clients> &clients) : m_clients(clients)
+Responder::Responder(const std::shared_ptr<Clients> &clients) : m_clients(clients)
 {
 
 }
