@@ -17,7 +17,7 @@ RequestHandler::RequestHandler(std::shared_ptr<Clients> &clients) : m_clients(cl
 
 }
 
-unsigned int RequestHandler::headerToInt(const char *header)
+int RequestHandler::headerToInt(const char *header)
 {
 	auto ret = std::atoi(header);
 	if (ret > 0) {
@@ -29,9 +29,10 @@ unsigned int RequestHandler::headerToInt(const char *header)
 
 int RequestHandler::readHeader(const int index)
 {
+    auto &client = m_clients->getClients()[index];
     const int bytesrd = read(m_clients->getPollClients()[index].fd,
-                             m_clients->getClients()[index].m_header + m_clients->getClients()[index].m_headerBytesRd,
-                             m_clients->getClients()[index].m_HEADERSIZE - m_clients->getClients()[index].m_headerBytesRd);
+                             client.m_header + client.m_headerBytesRd,
+                             client.m_HEADERSIZE - client.m_headerBytesRd);
     if (bytesrd < 0) {
         if ((errno == EAGAIN) || (errno == EINTR)) {
             return m_HEADERNOTDONE;
@@ -42,11 +43,11 @@ int RequestHandler::readHeader(const int index)
         return m_CLIENTCLOSEDCONN;
     }
 
-    m_clients->getClients()[index].m_headerBytesRd += bytesrd;
-    if (m_clients->getClients()[index].m_headerBytesRd == m_clients->getClients()[index].m_HEADERSIZE) {
-        m_clients->getClients()[index].m_headerDone = true;
-        m_clients->getClients()[index].m_bodyLength = headerToInt(m_clients->getClients()[index].m_header);
-        if (m_clients->getClients()[index].m_bodyLength > m_clients->getClients()[index].m_BODYSIZE) {
+    client.m_headerBytesRd += bytesrd;
+    if (client.m_headerBytesRd == client.m_HEADERSIZE) {
+        client.m_headerDone = true;
+        client.m_bodyLength = headerToInt(client.m_header);
+        if (client.m_bodyLength > client.m_BODYSIZE) {
             return m_HEADERREADERROR; // Stop the body buffer from overflowing
         }
 
@@ -58,9 +59,10 @@ int RequestHandler::readHeader(const int index)
 
 int RequestHandler::readBody(const int index)
 {
+    auto &client = m_clients->getClients()[index];
     const auto bytesrd = read(m_clients->getPollClients()[index].fd,
-                              m_clients->getClients()[index].m_body + m_clients->getClients()[index].m_bodyBytesRd,
-                              m_clients->getClients()[index].m_bodyLength - m_clients->getClients()[index].m_bodyBytesRd);
+                              client.m_body + client.m_bodyBytesRd,
+                              client.m_bodyLength - client.m_bodyBytesRd);
     if (bytesrd < 0) {
         if ((errno == EAGAIN) || (errno == EINTR)) {
             return m_BODYNOTDONE; 
@@ -73,8 +75,8 @@ int RequestHandler::readBody(const int index)
         return m_CLIENTCLOSEDCONN;
     }
 
-    m_clients->getClients()[index].m_bodyBytesRd += bytesrd;
-    if (m_clients->getClients()[index].m_bodyBytesRd < m_clients->getClients()[index].m_bodyLength) {
+    client.m_bodyBytesRd += bytesrd;
+    if (client.m_bodyBytesRd < client.m_bodyLength) {
         return m_BODYNOTDONE;
     }
     
@@ -127,22 +129,23 @@ void RequestHandler::doRoute(const int index)
 
 void RequestHandler::handleRequest(const int index)
 {
-    if (!m_clients->getClients()[index].m_readMutex.try_lock()) {
+    auto &client = m_clients->getClients()[index];
+    if (!client.m_readMutex.try_lock()) {
         return;
     }
 
     if (m_clients->getPollClients()[index].fd == -1) {
-        m_clients->getClients()[index].m_readMutex.unlock();
+        client.m_readMutex.unlock();
         return;
     }
 
-    if (m_clients->getClients()[index].m_headerDone == true) {
+    if (client.m_headerDone == true) {
         doReadBody(index);
     } else {
         doReadHeader(index);
     }
 
-    m_clients->getClients()[index].m_readMutex.unlock();
+    client.m_readMutex.unlock();
 }
 
 std::unique_ptr<Router> &RequestHandler::getRouter()

@@ -31,9 +31,9 @@ private:
 
     void doReadHeader(const int index);
     void doReadBody(const int index);
-    int readBody(const int index);
-    int readHeader(const int index);
-    unsigned int headerToInt(const char *header);
+    int  readBody(const int index);
+    int  readHeader(const int index);
+    int  headerToInt(const char *header);
     void doRoute(const int index);
 
 public:
