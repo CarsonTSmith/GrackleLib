@@ -17,8 +17,34 @@ Client::Client(const Client &other)
     m_bodyLength     = other.m_bodyLength;
     m_headerBytesRd  = other.m_headerBytesRd;
     m_bodyBytesRd    = other.m_bodyBytesRd;
-    m_docParsed      = other.m_docParsed;
-    m_jsonStart      = other.m_jsonStart;
+}
+
+void Client::parseBody(rapidjson::Document &doc)
+{
+    int i = 0;
+    for (i = 0; i < m_BODYSIZE; ++i) {
+        if (m_body[i] == '{') {
+            break;
+        }
+    }
+
+    doc.Parse(&(m_body[i]));
+}
+
+std::string Client::getBody(rapidjson::Document &doc)
+{
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    doc.Accept(writer);
+    return buffer.GetString();
+}
+
+std::pair<std::string, std::string> Client::parse()
+{
+    rapidjson::Document doc;
+    parseBody(doc);
+    auto body = getBody(doc);
+    return std::make_pair(doc[jsonkeys::PATH.c_str()].GetString(), body);
 }
 
 void Client::reset()
@@ -29,42 +55,4 @@ void Client::reset()
     m_bodyLength    = 0;
     m_headerBytesRd = 0;
     m_bodyBytesRd   = 0;
-    m_docParsed     = false;
-    m_jsonStart     = 0;
-}
-
-void Client::parseBody()
-{
-    int i = 0;
-    for (i = 0; i < m_BODYSIZE; ++i) {
-        if (m_body[i] == '{') {
-            m_jsonStart = i;
-            break;
-        }
-    }
-
-    m_doc.Parse(&(m_body[m_jsonStart]));
-    if (m_doc.HasParseError()) {
-        return;
-    }
-
-    m_docParsed = true;
-}
-
-std::string Client::getBody()
-{
-    if (!m_docParsed) {
-        return "";
-    }
-
-    rapidjson::StringBuffer buffer;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    m_doc.Accept(writer);
-    return buffer.GetString();
-}
-
-std::string Client::getPath()
-{
-    parseBody();
-    return m_doc[jsonkeys::PATH.c_str()].GetString();
 }

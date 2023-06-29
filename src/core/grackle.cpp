@@ -93,7 +93,7 @@ int doStart()
 void doAccept(std::atomic<bool> &cancel)
 {
     socklen_t addrsz = sizeof(m_addr);
-    int clientfd;
+    int clientfd, flags;
 
     while (1) {
         if (cancel) {
@@ -103,12 +103,16 @@ void doAccept(std::atomic<bool> &cancel)
         clientfd = accept(m_sockfd, (struct sockaddr *)&m_addr, &addrsz);
         if (clientfd < 0) {
             if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+                usleep(10000);
                 continue;
             }
 
             std::cerr << "Tcp accept failed" << std::endl;
             continue;
         }
+
+        flags = fcntl(clientfd, F_GETFL, 0);
+        fcntl(clientfd, F_SETFL, flags | O_NONBLOCK);
 
         auto index = m_clients->add(clientfd);
         if (index < 0) {

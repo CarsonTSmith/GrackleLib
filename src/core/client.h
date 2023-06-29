@@ -4,6 +4,7 @@
 #include <mutex>
 #include <rapidjson/document.h>
 #include <string>
+#include <utility>
 
 namespace grackle {
 
@@ -21,17 +22,19 @@ public:
     unsigned int        m_bodyBytesRd          = 0;
     std::mutex          m_readMutex;
     std::mutex          m_writeMutex;
-    rapidjson::Document m_doc;
-    bool                m_docParsed            = false;
-    unsigned int        m_jsonStart            = 0; // index where the first { in the body is
+    //rapidjson::Document m_doc;
+    //bool                m_docParsed            = false;
+    //unsigned int        m_jsonStart            = 0; // index where the first { in the body is
     
 
     Client() = default;
     Client(const Client &);
     void reset();
-    std::string getBody();
-    std::string getPath();
-    void parseBody();
+    std::pair<std::string, std::string> parse();
+
+private:
+    std::string getBody(rapidjson::Document &doc);
+    void parseBody(rapidjson::Document &doc);
 
 }; /* class Client */
 

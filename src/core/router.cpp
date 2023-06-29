@@ -26,13 +26,13 @@ bool Router::addRoute(const std::string &path,
 
 std::pair<bool, std::string> Router::route(const int index)
 {
-    auto path = m_clients->getClients()[index].getPath();
-    auto it = m_routeTable.find(path);
+    // <path, body>
+    auto pathAndBody = m_clients->getClients()[index].parse();
+    auto it = m_routeTable.find(pathAndBody.first);
     if (it == m_routeTable.end()) {
-        std::cerr << "Key [" << path << "] not found" << std::endl;
+        std::cerr << "Key [" << pathAndBody.first << "] not found" << std::endl;
         return std::make_pair(false, "");
     } else {
-        auto body = m_clients->getClients()[index].getBody();
-        return std::make_pair(true, it->second(body));
+        return std::make_pair(true, it->second(pathAndBody.second));
     }
 }

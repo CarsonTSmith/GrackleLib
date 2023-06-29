@@ -3,10 +3,9 @@
 #include <iostream>
 #include <string>
 
-static std::string echo(std::string &body)
+static std::string hello(std::string &body)
 {
-    std::string str = "Hello, World!";
-    return "00000013Hello, World!";
+    return "Hello, World!";
 }
 
 int main(int argc, char *argv[])
@@ -15,10 +14,11 @@ int main(int argc, char *argv[])
 
     server.setPort(42125);
     server.setMaxClients(100);
-    server.addEndpoint("/echo", echo);
+    server.addEndpoint("/hello", hello);
     server.start();
 
-    std::cout << "Running" << std::endl;
+    std::cout << "Server Running" << std::endl;
+    std::cout << "Press any key to exit" << std::endl;
     std::cin.get();
     std::cout << "Exiting" << std::endl;
     return 0;
