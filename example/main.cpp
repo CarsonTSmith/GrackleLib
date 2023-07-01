@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
     server.start();
 
     std::cout << "Server Running" << std::endl;
-    std::cout << "Press any key to exit" << std::endl;
+    std::cout << "Press enter to exit" << std::endl;
     std::cin.get();
     std::cout << "Exiting" << std::endl;
     return 0;
