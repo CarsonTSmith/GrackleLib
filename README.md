@@ -58,7 +58,7 @@ To get a local copy up and running follow these simple example steps.
 
 ### Prerequisites
 
-To build this project you will need to install rapidjson-dev. You can get this from a package manager.
+To build this project you will need a C++11 compiler, GNU Make, and a shell. You will also need to install rapidjson-dev. You can get this from a package manager.
 Rapidjson is a header only C++ json library that Grackle uses internally.
 
 ### Installation
