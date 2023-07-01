@@ -36,7 +36,8 @@ private:
     std::unique_ptr<RequestHandler> m_requestHandler;
     std::thread                     m_acceptThread;
     std::thread                     m_pollThread;
-    std::atomic<bool>               m_cancelThreads;
+    std::atomic<bool>               m_cancelThreads = { false };
+    bool                            m_isDaemon = false;
 
     // Threadpool    m_pool;
 
@@ -122,7 +123,7 @@ void doAccept(std::atomic<bool> &cancel)
 }
 
 /*******************************************************************************
-*
+* Infinite loop that polls clients and processes requests
 *
 *******************************************************************************/
 void doPoll(std::atomic<bool> &cancel)
@@ -169,29 +170,21 @@ void process(int numFds)
 public:
 
 
-
-/*******************************************************************************
-* Constructor
-*
-*******************************************************************************/
 GrackleServerImpl() : m_clients(new Clients),
                       m_requestHandler(new RequestHandler(m_clients))
 {
 
 }
 
-
 ~GrackleServerImpl()
 {
     m_cancelThreads = true;
     m_acceptThread.join();
-    m_pollThread.join();
-} // join the accept and poll threads here
+    if (!m_isDaemon) {
+        m_pollThread.join();
+    }
+}
 
-/*******************************************************************************
-* Start the server
-*
-*******************************************************************************/
 bool start()
 {
     auto status = doStart();
@@ -203,15 +196,15 @@ bool start()
     // These two threads will be in infinite loops either accepting incoming
     // Tcp connections or polling clients
     m_acceptThread = std::thread(&GrackleServerImpl::doAccept, this, std::ref(m_cancelThreads));
-    m_pollThread   = std::thread(&GrackleServerImpl::doPoll, this, std::ref(m_cancelThreads));
+    if (m_isDaemon) {
+        doPoll(m_cancelThreads);
+    } else {
+        m_pollThread   = std::thread(&GrackleServerImpl::doPoll, this, std::ref(m_cancelThreads));
+    }
 
     return true;
 }
 
-/*******************************************************************************
-*
-*
-*******************************************************************************/
 void setPort(const int port)
 {
     if ((port < 1) || (port > 65535)) {
@@ -222,10 +215,6 @@ void setPort(const int port)
     m_port = port;
 }
 
-/*******************************************************************************
-* Set the maximum simultaneous Tcp connections
-*
-*******************************************************************************/
 void setMaxClients(const int maxClients)
 {
     if (maxClients < 1) {
@@ -236,14 +225,14 @@ void setMaxClients(const int maxClients)
     m_clients->setMaxClients(maxClients);
 }
 
-/*******************************************************************************
-* Add an endpoint to the server
-*
-*******************************************************************************/
 bool addEndpoint(const std::string &path, const std::function<std::string(std::string &)> &callback)
 {
     return m_requestHandler->getRouter()->addRoute(path, callback);
-    return true;
+}
+
+void runAsDaemon()
+{
+    m_isDaemon = true;
 }
 
 }; /* class GrackleServerImpl */
@@ -263,21 +252,11 @@ bool addEndpoint(const std::string &path, const std::function<std::string(std::s
 * There will be no logic in these methods only forwarding.
 *
 *******************************************************************************/
-
-
-/*******************************************************************************
-* Constructor
-*
-*******************************************************************************/
 GrackleServer::GrackleServer() : m_impl(new GrackleServerImpl)
 {
 
 }
 
-/*******************************************************************************
-* Destructor - Stops the Accept and Poll threads and joins them
-*
-*******************************************************************************/
 GrackleServer::~GrackleServer() = default;
 
 /*******************************************************************************
@@ -322,4 +301,13 @@ bool GrackleServer::addEndpoint(const std::string &path,
                                 const std::function<std::string(std::string &)> &callback)
 {
     return m_impl->addEndpoint(path, callback);
+}
+
+/*******************************************************************************
+* Runs the server as a daemon in the background
+*
+*******************************************************************************/
+void GrackleServer::runAsDaemon()
+{
+    m_impl->runAsDaemon();
 }

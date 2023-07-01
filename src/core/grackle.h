@@ -33,6 +33,9 @@ public:
     bool addEndpoint(const std::string &path,
                      const std::function<std::string(std::string &)> &callback);
 
+    // Runs the server as a Daemon in the background
+    void runAsDaemon();
+
 }; /* class GrackleServer */
 
 } /* namespace grackle */
