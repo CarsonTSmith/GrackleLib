@@ -23,23 +23,14 @@
 [![Contributors][contributors-shield]][contributors-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
-[![GPLv2 License][license-shield]][license-url]
+[![MIT License][license-shield]][license-url]
 
 
 
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/othneildrew/Best-README-Template">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
-  </a>
-
   <h3 align="center">LibGrackle README</h3>
-
-  <p align="center">
-    An awesome README template to jumpstart your projects!
-    <br />
-  </p>
 </div>
 
 
@@ -71,8 +62,6 @@
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
-
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
 
 Grackle is an http like server library. An example of the format of Grackle messages is
 
@@ -146,7 +135,7 @@ Don't forget to give the project a star! Thanks again!
 <!-- LICENSE -->
 ## License
 
-Distributed under the GPLv2 License. See `LICENSE.txt` for more information.
+Distributed under the MIT License. See <a href="https://github.com/CarsonTSmith/LibGrackle/blob/main/LICENSE">License<a> for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
