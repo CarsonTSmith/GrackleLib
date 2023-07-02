@@ -123,8 +123,6 @@ Distributed under the MIT License. See <a href="https://github.com/CarsonTSmith/
 
 Carson Smith - CarsonTSmith@gmail.com
 
-Project Link: [https://github.com/CarsonTSmith/LibGrackle]([https://github.com/your_username/repo_name](https://github.com/CarsonTSmith/LibGrackle))
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
