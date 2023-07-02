@@ -86,6 +86,7 @@ LD_LIBRARY_PATH environment variable in your .bashrc file.
 ## Roadmap
 
 1) Add a threadpool.
+2) Change poll to epoll
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
