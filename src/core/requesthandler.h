@@ -37,6 +37,14 @@ private:
 
 public:
     RequestHandler(const std::shared_ptr<Clients> &clients);
+
+    RequestHandler(const RequestHandler &) = delete;
+    RequestHandler(RequestHandler &&) = delete;
+    RequestHandler &operator=(const RequestHandler &) = delete;
+    RequestHandler &operator=(RequestHandler &&) = delete;
+
+    ~RequestHandler() = default;
+
     void handleRequest(const int index);
     std::unique_ptr<Router> &getRouter();
 

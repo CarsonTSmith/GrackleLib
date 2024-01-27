@@ -14,10 +14,13 @@ private:
     std::unique_ptr<GrackleServerImpl> m_impl;
 
 public:
-    // Constructor.
     GrackleServer();
 
-    // Destructor.
+    GrackleServer(const GrackleServer &) = delete;
+    GrackleServer(GrackleServer &&) = delete;
+    GrackleServer &operator=(const GrackleServer &) = delete;
+    GrackleServer &operator=(GrackleServer &&) = delete;
+
     ~GrackleServer();
 
     // Starts the server.

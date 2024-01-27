@@ -91,13 +91,13 @@ int doStart()
 * Infinite event loop that accepts incoming Tcp connections
 *
 *******************************************************************************/
-void doAccept(std::atomic<bool> &cancel)
+void doAccept()
 {
     socklen_t addrsz = sizeof(m_addr);
     int clientfd, flags;
 
     while (1) {
-        if (cancel) {
+        if (m_cancelThreads) {
             return;
         }
 
@@ -126,7 +126,7 @@ void doAccept(std::atomic<bool> &cancel)
 * Infinite loop that polls clients and processes requests
 *
 *******************************************************************************/
-void doPoll(std::atomic<bool> &cancel)
+void doPoll()
 {
     int numFds;
 
@@ -134,7 +134,7 @@ void doPoll(std::atomic<bool> &cancel)
 		numFds = poll(m_clients->getPollClients().data(),
                       m_clients->getMaxClients(),
                        50); // timeout so when new clients connect they are polled
-        if (cancel) {
+        if (m_cancelThreads) {
             return;
         } else if (numFds == 0) {
             continue;
@@ -188,18 +188,18 @@ GrackleServerImpl() : m_clients(new Clients),
 bool start()
 {
     auto status = doStart();
-    if (status != 0) {
+    if (status) {
         std::cerr << "Tcp Server failed to start" << std::endl;
         return false;
     }
 
     // These two threads will be in infinite loops either accepting incoming
     // Tcp connections or polling clients
-    m_acceptThread = std::thread(&GrackleServerImpl::doAccept, this, std::ref(m_cancelThreads));
+    m_acceptThread = std::thread(&GrackleServerImpl::doAccept, this);
     if (m_isDaemon) {
-        doPoll(m_cancelThreads);
+        doPoll();
     } else {
-        m_pollThread   = std::thread(&GrackleServerImpl::doPoll, this, std::ref(m_cancelThreads));
+        m_pollThread   = std::thread(&GrackleServerImpl::doPoll, this);
     }
 
     return true;

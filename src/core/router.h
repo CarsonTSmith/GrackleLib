@@ -18,6 +18,14 @@ private:
 
 public:
     Router(const std::shared_ptr<Clients> &clients);
+
+    Router(const Router &) = delete;
+    Router(Router &&) = delete;
+    Router &operator=(const Router &) = delete;
+    Router &operator=(Router &&) = delete;
+
+    ~Router() = default;
+
     bool addRoute(const std::string &path,
                   const std::function<std::string(std::string &)> &callback);
     std::pair<bool, std::string> route(const int index);

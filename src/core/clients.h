@@ -21,6 +21,14 @@ private:
 
 public:
     Clients();
+
+    Clients(const Clients &) = delete;
+    Clients(Clients &&) = delete;
+    Clients &operator=(const Clients &) = delete;
+    Clients &operator=(Clients &&) = delete;
+
+    ~Clients() = default;
+
     int  add(const int clientfd);
     void reset(const int index);
 

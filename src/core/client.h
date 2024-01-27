@@ -24,7 +24,14 @@ public:
     std::mutex          m_writeMutex;
 
     Client() = default;
+
     Client(const Client &);
+    Client(Client &&) = delete;
+    Client &operator=(const Client &) = delete;
+    Client &operator=(Client &&) = delete;
+
+    ~Client() = default;
+
     void reset();
     std::pair<std::string, std::string> parse();
 

@@ -14,6 +14,14 @@ private:
 
 public:
     Responder(const std::shared_ptr<Clients> &clients);
+
+    Responder(const Responder &) = delete;
+    Responder(Responder &&) = delete;
+    Responder &operator=(const Responder &) = delete;
+    Responder &operator=(Responder &&) = delete;
+
+    ~Responder() = default;
+
     void sendToOne(const int index, const std::string &msg);
     void sendToAll(const std::string &msg);
 
