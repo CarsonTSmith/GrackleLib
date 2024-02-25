@@ -14,7 +14,12 @@ int main(int argc, char *argv[])
 {
     std::vector<grackle::GrackleServer::Endpoint> endpoints;
     endpoints.emplace_back(std::make_pair("/hello", hello));
-    grackle::GrackleServer server(endpoints, 42125, 64, false);
+    try {
+        grackle::GrackleServer server(endpoints, 42125, 64, false);
+    } catch (const std::exception &e) {
+        std::cerr << "Grackle Server failed to initialize. " << e.what() << std::endl;
+        return 1;
+    }
 
     std::cout << "Server Running" << std::endl;
     std::cout << "Press enter to exit" << std::endl;
