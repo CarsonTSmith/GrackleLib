@@ -7,7 +7,7 @@
 
 using namespace grackle;
 
-Router::Router(const std::shared_ptr<Clients> &clients) :m_clients(clients)
+Router::Router(const std::shared_ptr<Clients> &clients) : m_clients(clients)
 {
 
 }
@@ -21,7 +21,7 @@ bool Router::addRoute(const std::string &path,
     }
 
     auto status = m_routeTable.insert(std::make_pair(path, callback));
-    return status.second; // true or false where the insertion happened
+    return status.second; // true or false whether the insertion happened
 }
 
 std::pair<bool, std::string> Router::route(const int index)

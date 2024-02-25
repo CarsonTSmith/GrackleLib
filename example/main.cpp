@@ -1,7 +1,9 @@
-#include <grackle.h>
+#include <grackle.h> // GrackleServer
 
-#include <iostream>
-#include <string>
+#include <iostream> // cout
+#include <string> // string
+#include <utility> // pair
+#include <vector> // vector
 
 static std::string hello(std::string &body)
 {
@@ -10,13 +12,9 @@ static std::string hello(std::string &body)
 
 int main(int argc, char *argv[])
 {
-    grackle::GrackleServer server;
-
-    server.setPort(42125);
-    server.setMaxClients(100);
-    server.addEndpoint("/hello", hello);
-    //server.runAsDaemon(); // optional
-    server.start();
+    grackle::GrackleServer::Endpoints endpoints;
+    endpoints.emplace_back(std::make_pair("/hello", hello));
+    grackle::GrackleServer server(endpoints);
 
     std::cout << "Server Running" << std::endl;
     std::cout << "Press enter to exit" << std::endl;

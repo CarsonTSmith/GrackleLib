@@ -9,51 +9,34 @@
 #include <atomic> // atomic
 #include <fcntl.h> // fcntl
 #include <iostream> // cerr
-#include <memory> // shared_ptr
+#include <memory> // shared_ptr, unique_ptr
 #include <netinet/in.h> // struct sockaddr_in
+#include <stdexcept> // runtime_error
 #include <thread> // thread
 #include <unistd.h> // close
+#include <vector> // vector
 
 using namespace grackle;
 
+class GrackleServer::Impl {
 
-/*******************************************************************************
-* Implementation for GrackleServer
-* GrackleServer will forward the calls to this class.
-*
-*******************************************************************************/
-class GrackleServer::GrackleServerImpl {
-
-/*******************************************************************************
-* Private Member Variables
-*
-*******************************************************************************/
 private:
-    int                             m_port = 42125;
+    int                             m_port;
     int                             m_sockfd;
     struct sockaddr_in              m_addr;
     std::shared_ptr<Clients>        m_clients;
     std::unique_ptr<RequestHandler> m_requestHandler;
     std::thread                     m_acceptThread;
     std::thread                     m_pollThread;
-    std::atomic<bool>               m_cancelThreads = { false };
-    bool                            m_isDaemon = false;
+    std::atomic<bool>               m_cancelThreads;
+    bool                            m_isDaemon;
 
-    // Threadpool    m_pool;
-
-
-
+    // Threadpool    m_threadPool;
 
 /*******************************************************************************
-* Private Internal Functions
-*
+* Initializes the Tcp Server Socket
 *******************************************************************************/
-
-/*******************************************************************************
-* Initializes the Tcp Socket
-*
-*******************************************************************************/
-int doStart()
+int initializeTCPSocket()
 {
     m_sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (m_sockfd < 0) {
@@ -89,7 +72,6 @@ int doStart()
 
 /*******************************************************************************
 * Infinite event loop that accepts incoming Tcp connections
-*
 *******************************************************************************/
 void doAccept()
 {
@@ -119,12 +101,13 @@ void doAccept()
         if (index < 0) {
             close(clientfd);
         }
+
+        std::cout << "Client added" << std::endl;
     }
 }
 
 /*******************************************************************************
 * Infinite loop that polls clients and processes requests
-*
 *******************************************************************************/
 void doPoll()
 {
@@ -149,7 +132,6 @@ void doPoll()
 
 /*******************************************************************************
 * Grabs all the Sockets/Clients that had an event occur and processes them
-*
 *******************************************************************************/
 void process(int numFds)
 {
@@ -161,22 +143,104 @@ void process(int numFds)
     }
 }
 
-
-
-/*******************************************************************************
-* Public Member Functions
-*
-*******************************************************************************/
-public:
-
-
-GrackleServerImpl() : m_clients(new Clients),
-                      m_requestHandler(new RequestHandler(m_clients))
+bool validatePort(const int port)
 {
+    if ((port < 1025) || (port > 65535)) {
+        std::cerr << "Port number is out of range" << std::endl;
+        return false;
+    }
 
+    return true;
 }
 
-~GrackleServerImpl()
+bool addEndpoints(const Endpoints &endpoints)
+{
+    for (const auto &endpoint: endpoints) {
+        auto success = m_requestHandler->getRouter()->addRoute(endpoint.first, endpoint.second);
+        if (!success) {
+            std::cerr << "Failed to add endpoint for Path [" << endpoint.first << "]" << std::endl;
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool start()
+{
+    auto err = initializeTCPSocket();
+    if (err) {
+        std::cerr << "Tcp Server failed to start with errno [" << err << "]" << std::endl;
+        return false;
+    }
+
+    displayBanner();
+    displayServerInfo();
+
+    // These two threads will be in infinite loops either accepting incoming
+    // Tcp connections or polling clients
+    m_acceptThread = std::thread(&Impl::doAccept, this);
+    if (m_isDaemon) {
+        doPoll();
+    } else {
+        m_pollThread = std::thread(&Impl::doPoll, this);
+    }
+
+    return true;
+}
+
+void displayServerInfo()
+{
+    std::cout << "GrackleServer listening on Port ["
+              << m_port
+              << "] with max clients ["
+              << m_clients->getMaxClients()
+              << "]"
+              << std::endl;
+}
+
+void displayBanner()
+{
+    std::cout << "+======================================================================================+\n" \
+                 "|  ____                    _     _        ____                               __ __ __  |\n" \
+                 "| / ___| _ __  __ _   ___ | | __| |  ___ / ___|   ___  _ __ __   __ ___  _ __\\ \\ \\ \\ |\n" \
+                 "|| |  _ | '__|/ _` | / __|| |/ /| | / _ \\___ \\  / _ \\| '__|\\ \\ / // _ \\| '__|\\ \\ \\ \\|\n" \
+                 "|| |_| || |  | (_| || (__ |   < | ||  __/ ___) ||  __/| |    \\ V /|  __/| |   / // // /|\n" \
+                 "| \\____||_|   \\__,_| \\___||_|\\_\\|_| \\___||____/  \\___||_|     \\_/  \\___||_|  /_//_//_/ |\n" \
+                 "+======================================================================================+" << std::endl;
+}
+
+
+
+public:
+
+Impl(const Endpoints &endpoints,
+     const int port,
+     const int maxClients,
+     const bool runAsDaemon)
+    try : m_port(port),
+          m_clients(new Clients(maxClients)),
+          m_requestHandler(new RequestHandler(m_clients)),
+          m_isDaemon(runAsDaemon)
+{
+    bool success = validatePort(m_port) &&
+                   addEndpoints(endpoints);
+    if (!success) {
+        std::cerr << "GrackleServer failed initialization. Terminating (throwing an exception)." << std::endl;
+        throw std::runtime_error("GrackleServer failed initialization.");
+    }
+
+    success = start();
+    if (!success) {
+        std::cerr << "GrackleServer failed to start. Terminating (throwing an exception)." << std::endl;
+        throw std::runtime_error("GrackleServer failed to start.");
+    }
+}
+catch (...) {
+    throw;
+}
+
+~Impl()
 {
     m_cancelThreads = true;
     m_acceptThread.join();
@@ -185,129 +249,20 @@ GrackleServerImpl() : m_clients(new Clients),
     }
 }
 
-bool start()
-{
-    auto status = doStart();
-    if (status) {
-        std::cerr << "Tcp Server failed to start" << std::endl;
-        return false;
-    }
+}; /* class Impl */
 
-    // These two threads will be in infinite loops either accepting incoming
-    // Tcp connections or polling clients
-    m_acceptThread = std::thread(&GrackleServerImpl::doAccept, this);
-    if (m_isDaemon) {
-        doPoll();
-    } else {
-        m_pollThread   = std::thread(&GrackleServerImpl::doPoll, this);
-    }
 
-    return true;
+
+GrackleServer::GrackleServer(const Endpoints &endpoints,
+                             const int port,
+                             const int maxClients,
+                             const bool runAsDaemon)
+    try : m_impl(new Impl(endpoints, port, maxClients, runAsDaemon))
+{ 
+
 }
-
-void setPort(const int port)
-{
-    if ((port < 1) || (port > 65535)) {
-        std::cerr << "Port number is out of range" << std::endl;
-        return;
-    }
-
-    m_port = port;
-}
-
-void setMaxClients(const int maxClients)
-{
-    if (maxClients < 1) {
-        std::cerr << "Max clients can not be less than 1" << std::endl;
-        return;
-    }
-
-    m_clients->setMaxClients(maxClients);
-}
-
-bool addEndpoint(const std::string &path, const std::function<std::string(std::string &)> &callback)
-{
-    return m_requestHandler->getRouter()->addRoute(path, callback);
-}
-
-void runAsDaemon()
-{
-    m_isDaemon = true;
-}
-
-}; /* class GrackleServerImpl */
-
-
-
-
-
-
-
-
-
-
-/*******************************************************************************
-* GrackleServer
-* This class will forward its calls to GrackleServerImpl.
-* There will be no logic in these methods only forwarding.
-*
-*******************************************************************************/
-GrackleServer::GrackleServer() : m_impl(new GrackleServerImpl)
-{
-
+catch(...) {
+    throw;
 }
 
 GrackleServer::~GrackleServer() = default;
-
-/*******************************************************************************
-* Starts the server and begins listening on the port set by setPort().
-* Starts the accept() and poll() event loops.
-*
-*******************************************************************************/
-bool GrackleServer::start()
-{
-    return m_impl->start();
-}
-
-/*******************************************************************************
-* Sets the port that the server will bind to.
-*
-*******************************************************************************/
-void GrackleServer::setPort(const int port)
-{
-    m_impl->setPort(port);
-}
-
-/*******************************************************************************
-* Sets the maximum number of TCP clients that can be connected at once.
-*
-*******************************************************************************/
-void GrackleServer::setMaxClients(const int maxClients)
-{
-    m_impl->setMaxClients(maxClients);
-}
-
-/*******************************************************************************
-* Add an endpoint to the server.
-*
-* @parameter path: parameter will be the value that is in the json body with key "path"
-* @parameter callback: callback defined by the library user
-*
-* @return : will return false if an endpoint with that path already exists
-* eg. {"path":"/example/path"}
-*
-*******************************************************************************/
-bool GrackleServer::addEndpoint(const std::string &path,
-                                const std::function<std::string(std::string &)> &callback)
-{
-    return m_impl->addEndpoint(path, callback);
-}
-
-/*******************************************************************************
-* Runs the server as a daemon in the background
-*
-*******************************************************************************/
-void GrackleServer::runAsDaemon()
-{
-    m_impl->runAsDaemon();
-}

@@ -12,15 +12,15 @@ class Client;
 class Clients {
 
 private:
-    int m_maxClients = 64;
-    std::atomic<int> m_numClients = { 0 };
+    int m_maxClients;
+    std::atomic<int> m_numClients;
     std::vector<pollfd> m_pollClients;
     std::vector<Client> m_clients;
 
     void init();
 
 public:
-    Clients();
+    Clients(const int maxClients = 64);
 
     Clients(const Clients &) = delete;
     Clients(Clients &&) = delete;
@@ -32,7 +32,6 @@ public:
     int  add(const int clientfd);
     void reset(const int index);
 
-    void setMaxClients(const int maxClients);
     int  getMaxClients();
     std::vector<pollfd> &getPollClients();
     std::vector<Client> &getClients();

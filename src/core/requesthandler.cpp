@@ -5,13 +5,14 @@
 #include "responder.h"
 #include "router.h"
 
+#include <iostream>
 #include <cstdlib>
 #include <unistd.h>
 
 using namespace grackle;
 
-RequestHandler::RequestHandler(const std::shared_ptr<Clients> &clients) : 
-    m_clients(clients), 
+RequestHandler::RequestHandler(const std::shared_ptr<Clients> &clients) :
+    m_clients(clients),
     m_responder(new Responder(clients)),
     m_router(new Router(clients))
 {
@@ -21,6 +22,7 @@ RequestHandler::RequestHandler(const std::shared_ptr<Clients> &clients) :
 int RequestHandler::headerToInt(const char *header)
 {
 	auto ret = std::atoi(header);
+    std::cout << "Header is " << ret << std::endl;
 	if (ret > 0) {
 		return ret;
     } else {
@@ -120,6 +122,7 @@ void RequestHandler::doReadHeader(const int index)
 
 void RequestHandler::doRoute(const int index)
 {
+    std::cout << "doRoute" << std::endl;
     auto result = m_router->route(index);
     if (result.first) {
         m_responder->sendToOne(index, result.second);
@@ -130,6 +133,7 @@ void RequestHandler::doRoute(const int index)
 
 void RequestHandler::handleRequest(const int index)
 {
+    std::cout << "handleRequest" << std::endl;
     auto &client = m_clients->getClients()[index];
     if (!client.m_readMutex.try_lock()) {
         return;

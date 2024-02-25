@@ -1,47 +1,39 @@
 #ifndef _GRACKLE_H_
 #define _GRACKLE_H_
 
-#include <functional>
-#include <memory>
-#include <string>
+#include <functional> // function
+#include <memory> // unique_ptr
+#include <string> // string
+#include <utility> // pair
+#include <vector> // vector
 
 namespace grackle {
 
 class GrackleServer {
 
+public:
+    typedef std::function<std::string(std::string &)> Callback;
+    typedef std::pair<std::string, Callback> Endpoint;
+    typedef std::vector<Endpoint> Endpoints;
+
 private:
-    class GrackleServerImpl;
-    std::unique_ptr<GrackleServerImpl> m_impl;
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 
 public:
-    GrackleServer();
+    GrackleServer(const Endpoints &endpoints,
+                  const int port = 42125,
+                  const int maxClients = 64,
+                  const bool runAsDaemon = true);
+
+    ~GrackleServer();
 
     GrackleServer(const GrackleServer &) = delete;
     GrackleServer(GrackleServer &&) = delete;
     GrackleServer &operator=(const GrackleServer &) = delete;
     GrackleServer &operator=(GrackleServer &&) = delete;
-
-    ~GrackleServer();
-
-    // Starts the server.
-    bool start();
-
-    // Sets the port number that the Tcp socket will bind to.
-    void setPort(const int port);
-
-    // Sets the maximum number of Tcp clients that can be connected at once.
-    void setMaxClients(const int maxClients);
-
-    // Adds an endpoint and a callback to the Server.
-    bool addEndpoint(const std::string &path,
-                     const std::function<std::string(std::string &)> &callback);
-
-    // Runs the server as a Daemon in the background
-    void runAsDaemon();
-
 }; /* class GrackleServer */
 
 } /* namespace grackle */
-
 
 #endif /* _GRACKLE_H_ */

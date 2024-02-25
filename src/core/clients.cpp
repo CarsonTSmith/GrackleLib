@@ -3,17 +3,28 @@
 #include "client.h"
 
 #include <iostream> // cerr
+#include <stdexcept> // runtime_error
 #include <unistd.h> // close
 
 using namespace grackle;
 
-Clients::Clients()
+Clients::Clients(const int maxClients) : m_maxClients(maxClients), m_numClients(0)
 {
+    if (maxClients < 1) {
+        std::cerr << "Max clients cannot be less than 1" << std::endl;
+        throw std::runtime_error("Max clients cannot be less than 1");
+    } else if (maxClients > 2147483647) {
+        std::cerr << "Max clients cannot be more than 2,147,483,647" << std::endl;
+        throw std::runtime_error("Max clients cannot be more than 2,147,483,647");
+    }
+
     init();
 }
 
 void Clients::init()
 {
+    m_pollClients.resize(m_maxClients);
+    m_clients.resize(m_maxClients);
     for (auto &pClient: m_pollClients) {
         pClient.fd     = -1;
         pClient.events = POLLIN;
@@ -35,22 +46,6 @@ int Clients::add(const int clientfd)
     }
 
     return -1;
-}
-
-void Clients::setMaxClients(const int maxClients)
-{
-    if (maxClients < 1) {
-        std::cerr << "Max clients cannot be less than 1" << std::endl;
-        return;
-    } else if (maxClients > 2147483647) {
-        std::cerr << "Max clients cannot be more than 2,147,483,647" << std::endl;
-        return;
-    }
-
-    m_maxClients = maxClients;
-    m_pollClients.resize(m_maxClients);
-    m_clients.resize(m_maxClients);
-    init();
 }
 
 void Clients::reset(const int index)

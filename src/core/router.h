@@ -1,10 +1,10 @@
 #ifndef _ROUTER_H_
 #define _ROUTER_H_
 
-#include <functional>
-#include <memory>
-#include <string>
-#include <unordered_map>
+#include <functional> // function
+#include <memory> // shared_ptr
+#include <string> // string
+#include <unordered_map> // unordered_map
 
 namespace grackle {
 
