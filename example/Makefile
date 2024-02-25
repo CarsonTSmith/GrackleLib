@@ -1,5 +1,5 @@
 INC := -I ../src/core
-LDFLAGS += -L ../lib
+LDFLAGS += -L $(CURDIR)/../lib
 LIBS := -lgrackle
 
 all: main

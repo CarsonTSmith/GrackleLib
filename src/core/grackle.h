@@ -14,14 +14,13 @@ class GrackleServer {
 public:
     typedef std::function<std::string(std::string &)> Callback;
     typedef std::pair<std::string, Callback> Endpoint;
-    typedef std::vector<Endpoint> Endpoints;
 
 private:
     class Impl;
     std::unique_ptr<Impl> m_impl;
 
 public:
-    GrackleServer(const Endpoints &endpoints,
+    GrackleServer(const std::vector<Endpoint> &endpoints,
                   const int port = 42125,
                   const int maxClients = 64,
                   const bool runAsDaemon = true);

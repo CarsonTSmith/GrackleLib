@@ -101,8 +101,6 @@ void doAccept()
         if (index < 0) {
             close(clientfd);
         }
-
-        std::cout << "Client added" << std::endl;
     }
 }
 
@@ -153,7 +151,7 @@ bool validatePort(const int port)
     return true;
 }
 
-bool addEndpoints(const Endpoints &endpoints)
+bool addEndpoints(const std::vector<Endpoint> &endpoints)
 {
     for (const auto &endpoint: endpoints) {
         auto success = m_requestHandler->getRouter()->addRoute(endpoint.first, endpoint.second);
@@ -201,20 +199,22 @@ void displayServerInfo()
 
 void displayBanner()
 {
-    std::cout << "+======================================================================================+\n" \
-                 "|  ____                    _     _        ____                               __ __ __  |\n" \
-                 "| / ___| _ __  __ _   ___ | | __| |  ___ / ___|   ___  _ __ __   __ ___  _ __\\ \\ \\ \\ |\n" \
-                 "|| |  _ | '__|/ _` | / __|| |/ /| | / _ \\___ \\  / _ \\| '__|\\ \\ / // _ \\| '__|\\ \\ \\ \\|\n" \
-                 "|| |_| || |  | (_| || (__ |   < | ||  __/ ___) ||  __/| |    \\ V /|  __/| |   / // // /|\n" \
-                 "| \\____||_|   \\__,_| \\___||_|\\_\\|_| \\___||____/  \\___||_|     \\_/  \\___||_|  /_//_//_/ |\n" \
-                 "+======================================================================================+" << std::endl;
+    std::cout << "+==================================================================================================================================================+\n" \
+                "| ######   ########     ###     ######  ##    ## ##       ########     ######  ######## ########  ##     ## ######## ########     ##    ##    ##   |\n" \
+                "|##    ##  ##     ##   ## ##   ##    ## ##   ##  ##       ##          ##    ## ##       ##     ## ##     ## ##       ##     ##     ##    ##    ##  |\n" \
+                "|##        ##     ##  ##   ##  ##       ##  ##   ##       ##          ##       ##       ##     ## ##     ## ##       ##     ##      ##    ##    ## |\n" \
+                "|##   #### ########  ##     ## ##       #####    ##       ######       ######  ######   ########  ##     ## ######   ########        ##    ##    ##|\n" \
+                "|##    ##  ##   ##   ######### ##       ##  ##   ##       ##                ## ##       ##   ##    ##   ##  ##       ##   ##        ##    ##    ## |\n" \
+                "|##    ##  ##    ##  ##     ## ##    ## ##   ##  ##       ##          ##    ## ##       ##    ##    ## ##   ##       ##    ##      ##    ##    ##  |\n" \
+                "| ######   ##     ## ##     ##  ######  ##    ## ######## ########     ######  ######## ##     ##    ###    ######## ##     ##    ##    ##    ##   |\n" \
+                "+==================================================================================================================================================+" << std::endl;
 }
 
 
 
 public:
 
-Impl(const Endpoints &endpoints,
+Impl(const std::vector<Endpoint> &endpoints,
      const int port,
      const int maxClients,
      const bool runAsDaemon)
@@ -253,7 +253,7 @@ catch (...) {
 
 
 
-GrackleServer::GrackleServer(const Endpoints &endpoints,
+GrackleServer::GrackleServer(const std::vector<Endpoint> &endpoints,
                              const int port,
                              const int maxClients,
                              const bool runAsDaemon)

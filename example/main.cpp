@@ -12,9 +12,9 @@ static std::string hello(std::string &body)
 
 int main(int argc, char *argv[])
 {
-    grackle::GrackleServer::Endpoints endpoints;
+    std::vector<grackle::GrackleServer::Endpoint> endpoints;
     endpoints.emplace_back(std::make_pair("/hello", hello));
-    grackle::GrackleServer server(endpoints);
+    grackle::GrackleServer server(endpoints, 42125, 64, false);
 
     std::cout << "Server Running" << std::endl;
     std::cout << "Press enter to exit" << std::endl;

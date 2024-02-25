@@ -21,8 +21,6 @@ Responder::Responder(const std::shared_ptr<Clients> &clients) : m_clients(client
 *******************************************************************************/
 void Responder::sendToOne(const int index, const std::string &msg)
 {
-    std::cout << "Sending To One" << std::endl;
-    std::cout << msg << std::endl;
     ssize_t result = 0, total = 0;
 
     if (msg.size() == 0) {
